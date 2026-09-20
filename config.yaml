@@ -1,0 +1,278 @@
+# ==============================================================================
+# Gesto-Drive Computer Vision Pipeline Configuration
+# Edit parameters and YOLOE vocabulary prompts below.
+# ==============================================================================
+
+pipeline:
+  camera_index: 0                       # Webcam index (e.g., 0) or path to video file (e.g., "test-Vids/gestoChair-CV-trial1.mp4")
+  frame_width: 640                      # Frame capture width
+  frame_height: 480                     # Frame capture height
+  device: "cuda"                        # Compute device: "cuda" or "cpu"
+  fps_target: 10.0                      # Target FPS before degradation mode triggers
+  spatial_zones: 5                      # Number of horizontal spatial zones (3, 5, or 7)
+  payload_sink: "both"                  # "stdout", "file", or "both"
+  payload_file: "payloads.jsonl"        # Output JSONL path
+  show_cv_window: true                  # Display OpenCV annotated debug window
+  show_dashboard: true                  # Write latest_frame.jpg for Streamlit dashboard
+  offline: false                        # Run offline without network checks
+
+models:
+  # Object Detection & Tracking (Ultralytics YOLOE)
+  yoloe_model: "yoloe-11s-seg.pt"       # Open-vocabulary segmentation model
+  yolo_model: "yolov8n.pt"              # Legacy COCO fallback model
+  yolo_conf_thresh: 0.4                 # Detection confidence threshold
+  tracker: "bytetrack.yaml"             # Multi-object tracker
+  scene_mode: "outdoor"                 # Active vocabulary scene: "outdoor" or "indoor"
+
+  # Monocular Depth Estimation (MiDaS)
+  midas_model: "MiDaS_small"            # MiDaS model variant
+  depth_fallback_interval: 6            # Fallback frame interval when no close hazards are present
+  depth_hazard_area_thresh: 0.04        # Trigger depth if hazard bbox area > 4% of frame
+  depth_agent_area_thresh: 0.08         # Trigger depth if agent bbox area > 8% of frame
+
+  # Optical Character Recognition (EasyOCR)
+  ocr_conf_thresh: 0.7                  # Minimum OCR confidence threshold
+  ocr_every_n_frames: 10                # Fallback interval (OCR is primarily event-driven)
+
+  # Face Recognition (dlib)
+  face_every_n_frames: 5                # Face recognition check interval on person ROIs
+  face_tolerance: 0.5                   # Face distance matching threshold (lower is stricter)
+  face_db_path: "data/known_faces.pkl"  # Enrolled face encodings database
+
+# ==============================================================================
+# Open-Vocabulary Prompts & Semantic Trigger Categories
+# ==============================================================================
+vocabulary:
+  outdoor:
+    # Critical Surface Hazards
+    - "pothole"
+    - "road crater"
+    - "asphalt bump"
+    - "plastic rumble strip"
+    - "unpainted speed bump"
+    - "closed manhole"
+    - "open manhole"
+    - "improperly seated manhole"
+    - "longitudinal crack"
+    - "transverse crack"
+    - "alligator cracking"
+    - "uneven paving"
+    - "water puddle"
+    - "oil spill"
+    - "road debris"
+    - "garbage pile"
+    - "fallen tree branch"
+    # Traffic Control & Road Markings
+    - "zebra crossing"
+    - "crosswalk"
+    - "solid lane line"
+    - "dashed lane line"
+    - "stop line"
+    - "road directional arrow"
+    - "stop sign"
+    - "yield sign"
+    - "speed limit sign"
+    - "pedestrian crossing sign"
+    - "traffic light"
+    - "red traffic light"
+    - "green traffic light"
+    - "yellow traffic light"
+    - "pedestrian walk signal"
+    - "pedestrian don't walk signal"
+    # Obstacles & Infrastructure
+    - "construction barricade"
+    - "traffic cone"
+    - "bollard"
+    - "guardrail"
+    - "road divider"
+    - "median strip"
+    - "curb edge"
+    - "tactile paving"
+    - "braille blocks"
+    - "staircase edge"
+    - "curb ramp"
+    - "sidewalk"
+    # Dynamic Agents
+    - "pedestrian"
+    - "person"
+    - "wheelchair"
+    - "baby stroller"
+    - "cyclist"
+    - "bicycle"
+    - "motorcycle"
+    - "scooter"
+    - "car"
+    - "suv"
+    - "auto rickshaw"
+    - "bus"
+    - "truck"
+    - "stray dog"
+    - "street cattle"
+
+  indoor:
+    # Structural Hazards & Boundaries
+    - "staircase going down"
+    - "staircase going up"
+    - "single step down"
+    - "single step up"
+    - "closed glass door"
+    - "open door"
+    - "narrow doorway"
+    - "hallway corner"
+    - "sliding glass partition"
+    - "indoor wall"
+    - "pillar"
+    - "column"
+    # Floor Surface & Dynamic Hazards
+    - "wet floor"
+    - "wet floor sign"
+    - "loose rug"
+    - "carpet edge"
+    - "exposed electrical cable"
+    - "floor wire"
+    - "dropped object"
+    - "scattered toys"
+    - "dropped clothes"
+    - "liquid spill on floor"
+    # Furniture & Static Obstacles
+    - "office chair"
+    - "dining chair"
+    - "armchair"
+    - "wheelchair"
+    - "desk"
+    - "dining table"
+    - "coffee table"
+    - "sofa"
+    - "bed"
+    - "cabinet"
+    - "bookshelf"
+    - "trash bin"
+    - "indoor plant"
+    # Indoor Navigation & Signage
+    - "elevator door"
+    - "elevator call button"
+    - "emergency exit sign"
+    - "restroom sign"
+    - "room number plaque"
+    - "directional indoor sign"
+    # Dynamic Obstacles
+    - "walking person"
+    - "sitting person"
+    - "standing person"
+    - "person"
+    - "child"
+    - "pet dog"
+    - "pet cat"
+    - "cleaning cart"
+    - "luggage trolley"
+
+  # Semantic Subsets for Conditional Triggering
+  hazards:
+    - "pothole"
+    - "road crater"
+    - "asphalt bump"
+    - "plastic rumble strip"
+    - "unpainted speed bump"
+    - "open manhole"
+    - "improperly seated manhole"
+    - "water puddle"
+    - "oil spill"
+    - "fallen tree branch"
+    - "curb edge"
+    - "staircase edge"
+    - "staircase going down"
+    - "single step down"
+    - "closed glass door"
+    - "wet floor"
+    - "exposed electrical cable"
+    - "floor wire"
+    - "liquid spill on floor"
+
+  agents:
+    - "pedestrian"
+    - "person"
+    - "walking person"
+    - "sitting person"
+    - "standing person"
+    - "child"
+    - "cyclist"
+    - "bicycle"
+    - "motorcycle"
+    - "scooter"
+    - "car"
+    - "suv"
+    - "auto rickshaw"
+    - "bus"
+    - "truck"
+    - "stray dog"
+    - "street cattle"
+    - "pet dog"
+    - "pet cat"
+    - "cleaning cart"
+    - "luggage trolley"
+    - "wheelchair"
+    - "baby stroller"
+
+  ocr_triggers:
+    - "stop sign"
+    - "yield sign"
+    - "speed limit sign"
+    - "pedestrian crossing sign"
+    - "traffic light"
+    - "red traffic light"
+    - "green traffic light"
+    - "yellow traffic light"
+    - "pedestrian walk signal"
+    - "pedestrian don't walk signal"
+    - "wet floor sign"
+    - "emergency exit sign"
+    - "restroom sign"
+    - "room number plaque"
+    - "directional indoor sign"
+
+# ==============================================================================
+# NLP Engine Configuration (Dual TTS & Voice Interaction)
+# ==============================================================================
+nlp:
+  # Language & Dual TTS
+  language: "en"                          # Default language: "en", "hi", "gu"
+  tts_primary_engine: "edge-tts"          # Primary online engine
+  tts_emergency_engine: "pyttsx3"         # Emergency offline engine (critical hazards)
+  tts_rate: "+10%"                        # Speed rate (+10%, +0%, -5%)
+  tts_volume: "+0%"                       # Volume (+0%, -10%)
+  tts_pitch: "+0Hz"                       # Pitch (+0Hz, +2Hz)
+
+  # Edge-TTS Voice Mapping
+  voices:
+    en: "en-IN-NeerjaExpressiveNeural"    # Indian English (Expressive Female)
+    hi: "hi-IN-SwaraNeural"               # Hindi (Female)
+    gu: "gu-IN-DhwaniNeural"              # Gujarati (Female)
+
+  # Emergency pyttsx3 parameters
+  pyttsx3_rate: 150                       # Words per minute for critical alerts
+
+  # STT
+  stt_model: "small"                      # faster-whisper model size
+  stt_device: "cpu"                       # "cpu" to preserve VRAM for VLM
+  stt_compute_type: "int8"                # "int8" for minimal VRAM
+  stt_silence_timeout: 2.0                # Seconds of silence before STT stops recording
+  push_to_talk_key: "f5"                  # Key to hold for voice input
+
+  # Announcements & Smart Cooldown
+  announce_hazard_depth_thresh: 0.5       # Only announce hazards closer than this
+  announce_person_depth_thresh: 0.6       # Only announce people closer than this
+  announce_hazard_cooldown: 15            # Seconds before re-announcing same hazard
+  announce_person_cooldown: 30            # Seconds before re-announcing same person
+  announce_depth_increase_thresh: 0.1     # Re-announce if depth_score increases by this much
+  announce_ocr_cooldown: 30               # Seconds before re-announcing same OCR text
+
+  # Scene Reasoner & VLM
+  vlm_enabled: true                       # Enable Tier 2 VLM fallback
+  vlm_model: "Qwen/Qwen3-VL-2B-Instruct"  # Vision-language model
+  vlm_max_tokens: 100                     # Max generated tokens for spoken response
+  vlm_temperature: 0.2                    # Sampling temperature
+
+  # Face Enrollment
+  enrollment_enabled: true                # Enable interactive voice enrollment
+  enrollment_cooldown: 60                 # Seconds before re-triggering for same object_id
+
